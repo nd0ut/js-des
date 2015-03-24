@@ -1,0 +1,25 @@
+{
+  "name": "rsa",
+  "version": "0.0.0",
+  "scripts": {},
+  "devDependencies": {
+    "babel": "^4.7.16",
+    "big-integer": "^1.4.4",
+    "chai": "^2.1.2",
+    "chance": "^0.7.3",
+    "chancejs": "0.0.8",
+    "gulp": "^3.8.11",
+    "gulp-babel": "^4.0.0",
+    "gulp-karma": "0.0.4",
+    "gulp-mocha": "^2.0.0",
+    "gulp-plumber": "^1.0.0",
+    "js-base64": "^2.1.7",
+    "lodash": "^3.5.0",
+    "mathjs": "^1.4.0",
+    "mocha": "^2.2.1",
+    "mocha-pretty-spec-reporter": "0.1.0-beta.2",
+    "numbers": "^0.6.0",
+    "numeric": "^1.2.6",
+    "randomjs": "^1.0.1"
+  }
+}
