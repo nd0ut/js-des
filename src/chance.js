@@ -1,6 +1,5 @@
 import Chance from "chance";
 import _ from "lodash";
-import num from "numeric";
 import numbers from "numbers";
 
 export var chance = new Chance();
