@@ -1,6 +1,7 @@
 import Chance from "chance";
 import _ from "lodash";
 import numbers from "numbers";
+import forge from "node-forge";
 
 export var chance = new Chance();
 
@@ -36,7 +37,7 @@ var eratosthenes = function(n) {
 chance.mixin({
     'odd': function() {
         while(1) {
-          var maybeOdd = chance.integer({min: 100, max: 1000});
+          var maybeOdd = chance.integer({min: 100000000, max: 9999999999});
 
           if(maybeOdd % 2 !== 0) {
             return maybeOdd;
@@ -44,6 +45,13 @@ chance.mixin({
         }
     },
     'prime': function() {
-      return eratosthenes(chance.integer({min: 100, max: 1000}))
+        var prime;
+
+        forge.prime.generateProbablePrime(16, function(err, num) {
+            prime = parseInt(num.toString());
+        });
+
+        while(!prime) {}
+        return prime;
     }
 });

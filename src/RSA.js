@@ -48,6 +48,7 @@ export default class RSA {
 
   static encrypt(p, key) {
     if(p >= key.n) {
+      console.log(arguments);
       throw "p should be < n";
     }
 
