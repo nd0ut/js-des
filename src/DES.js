@@ -312,7 +312,7 @@ export default class DES {
       var left = _.take(block, block.length / 2);
       var right = _.takeRight(block, block.length / 2);
 
-      var encrypted = this.feistelRound(left, right, 4, roundKeys);
+      var encrypted = this.feistelRound(left, right, 16, roundKeys);
       encrypted = this.endTranspose(encrypted);
       encryptedBlocks.push(encrypted);
     });
@@ -337,7 +337,7 @@ export default class DES {
       var left = _.take(block, block.length / 2);
       var right = _.takeRight(block, block.length / 2);
 
-      var decrypted = this.feistelRound(left, right, -4, roundKeys);
+      var decrypted = this.feistelRound(left, right, -16, roundKeys);
       decrypted = this.endTranspose(decrypted);
       decryptedBlocks.push(decrypted);
     });
