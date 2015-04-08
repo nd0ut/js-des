@@ -32,7 +32,7 @@ describe.only('DES', function () {
   });
 
   describe('#generateRoundKeys', function () {
-    it.only('works', function () {
+    it('works', function () {
       var key = DES.generateKey();
       var roundKeys = DES.generateRoundKeys(key);
     });
@@ -69,15 +69,29 @@ describe.only('DES', function () {
     });
   });
 
-  it('test des', function () {
+  it('should encrypt and decrypt text with valid key', function () {
     var key = DES.generateKey();
 
-    // var sourceText = chance.sentence();
-    var sourceText = 'test'
+    var sourceText = chance.sentence();
     var cipher = DES.encryptText(sourceText, key);
 
     var decryptedText = DES.decryptText(cipher, key);
 
     expect(decryptedText).to.eql(sourceText);
+  });
+
+  it('should not decrypt text without valid key', function () {
+    var key = DES.generateKey();
+
+    var sourceText = chance.sentence();
+    var cipher = DES.encryptText(sourceText, key);
+
+    var invalidKey = key.toString(2).split('')
+    invalidKey[0] = !invalidKey[0];
+    invalidKey = invalidKey.join('');
+
+    var decryptedText = DES.decryptText(cipher, bigInt(invalidKey, 2));
+
+    expect(decryptedText).to.not.eql(sourceText);
   });
 });
