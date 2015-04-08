@@ -152,16 +152,6 @@ export default class DES {
     return int;
   }
 
-  static removeCheckBits(key) {
-    var bitsTable = _.chunk(key.toString(2).split(''), 8);
-
-    var realKey = _.map(bitsTable, bits => _.dropRight(bits));
-
-    var int = bigInt(_.flatten(realKey).join(''), 2);
-
-    return int;
-  }
-
   static generateRoundKeys(key) {
     var keyBits = key.toString(2).split('');
 
@@ -218,14 +208,18 @@ export default class DES {
   }
 
   static f(block, key, round) {
+    // дополняем 32 блок до 48
     var extendedBlock = this.extend(block);
 
+    // ксорим с ключём
     var xoredBlock = _.map(extendedBlock, (bit, idx) => bit ^ key[idx]);
 
+    // делим на части S по 6 бит
     var chunks = _.chunk(xoredBlock, 6);
 
     var sOut = '';
 
+    // применяем табблицы выбора
     _.forEach(chunks, (chunk, idx) => {
       var matrix = this.getSMatrix(idx);
 
@@ -255,17 +249,22 @@ export default class DES {
     return p;
   }
 
+  // rounds < 0 - дешифровка, > 0 - шифровка
   static feistelRound(left, right, rounds, keys) {
-    var realRounds = Math.abs(rounds);
-    var curRound = rounds < 0 ? realRounds : 1;
+    var realRounds = Math.abs(rounds); // реальный номер рануда
+    var curRound = rounds < 0 ? realRounds : 1; // текущий раунд
 
     while(1) {
+      // прогоняем левую часть через f
       var leftEncrypted = this.f(left, keys[curRound - 1], curRound);
+
+      // ксорим её с правой
       var leftXored = _.map(leftEncrypted, (bit, idx) => bit ^ right[idx]);
 
       var newLeft = leftXored;
       var newRight = left;
 
+      // возвращаем результат если раунды закончились
       if(curRound === (rounds < 0 ? 1 : realRounds)) {
         return left.concat(leftXored);
       }
@@ -273,20 +272,25 @@ export default class DES {
       left = newLeft;
       right = newRight;
 
+      // увеличиваем или уменьшаем счётчик раундов, в зависимости от направления
       curRound = rounds < 0 ? curRound - 1: curRound + 1;
     }
   }
 
   static encryptText(text, key) {
+    // генерим ключи
     var roundKeys = this.generateRoundKeys(key);
 
+    // коды символов
     var codes = _.map(text, char => char.charCodeAt(0));
+
+    // конвертим коды в бинарный вид
     var bits = _(codes)
       .map(code => code.toString(2))
       .map(bits => bits.split(''))
       .map(bits => {
         if(bits.length !== 16) {
-          _.times(16 - bits.length, () => bits.unshift(0));
+          _.times(16 - bits.length, () => bits.unshift(0)); // дополняем ведущими нулями до 16 битов
         }
         return bits.join('');
       })
@@ -298,7 +302,7 @@ export default class DES {
       .chunk(64)
       .map(block => {
         if(block.length !== 64) {
-          _.times(64 - block.length, () => block.push(0));
+          _.times(64 - block.length, () => block.push(0)); // дополняем нулями блоки до 64 битов
         }
 
         return block
@@ -306,14 +310,16 @@ export default class DES {
 
     var encryptedBlocks = [];
 
+    // для каждого блока
     _.forEach(blocks, block => {
-      block = this.initialTranspose(block);
+      block = this.initialTranspose(block); // начальная перестановка
 
       var left = _.take(block, block.length / 2);
       var right = _.takeRight(block, block.length / 2);
 
       var encrypted = this.feistelRound(left, right, 16, roundKeys);
-      encrypted = this.endTranspose(encrypted);
+      encrypted = this.endTranspose(encrypted); // конечная перестановка
+
       encryptedBlocks.push(encrypted);
     });
 
@@ -325,29 +331,33 @@ export default class DES {
   }
 
   static decryptText(cipher, key) {
+    // генерим ключи
     var roundKeys = this.generateRoundKeys(key);
 
+    // разбираем base64, делим биты на блоки по 64
     var encryptedBlocks = _.chunk(Base64.decode(cipher).split(''), 64);
     var decryptedBlocks = [];
 
+    // цикл по блокам
     _.forEach(encryptedBlocks, block => {
       block = _.map(block, bit => parseInt(bit));
-      block = this.initialTranspose(block);
+      block = this.initialTranspose(block); // начальная перестановка
 
       var left = _.take(block, block.length / 2);
       var right = _.takeRight(block, block.length / 2);
 
       var decrypted = this.feistelRound(left, right, -16, roundKeys);
-      decrypted = this.endTranspose(decrypted);
+      decrypted = this.endTranspose(decrypted); // конечная перестановка
+
       decryptedBlocks.push(decrypted);
     });
 
     decryptedBlocks = decryptedBlocks
       .map(block => {
-        var chunks = _.chunk(block, 16);
-        var codes = chunks.map(bin => bigInt(bin.join(''), 2).toString(10));
+        var chunks = _.chunk(block, 16); // 16 бит на символ
+        var codes = chunks.map(bin => bigInt(bin.join(''), 2).toString(10)); // коды символов
         codes = _.remove(codes, code => code !== '0');
-        var chars = codes.map(code => String.fromCharCode(code));
+        var chars = codes.map(code => String.fromCharCode(code)); // символы
         var text = chars.join('');
         return text;
       });
