@@ -162,12 +162,12 @@ export default class DES {
   static f(block, key, round) {
     var extendedBlock = this.extend(block);
 
-    var xoredBlock = _.map(extendedBlock, (code, idx) => code ^ key[idx]);
+    var xoredBlock = _.map(extendedBlock, (bit, idx) => bit ^ key[idx]);
 
     var chunks = _.chunk(xoredBlock, 6);
 
-    return _.map(block, code => {
-      return code + round;
+    return _.map(block, bit => {
+      return !bit;
     });
   }
 
@@ -177,7 +177,7 @@ export default class DES {
 
     while(1) {
       var leftEncrypted = this.f(left, keys[curRound - 1], curRound);
-      var leftXored = _.map(leftEncrypted, (code, idx) => code ^ right[idx]);
+      var leftXored = _.map(leftEncrypted, (bit, idx) => bit ^ right[idx]);
 
       var newLeft = leftXored;
       var newRight = left;
@@ -197,7 +197,20 @@ export default class DES {
     var roundKeys = this.generateRoundKeys(key);
 
     var codes = _.map(text, char => char.charCodeAt(0));
-    var blocks = _(codes)
+    var bits = _(codes)
+      .map(code => code.toString(2))
+      .map(bits => bits.split(''))
+      .map(bits => {
+        if(bits.length !== 16) {
+          _.times(16 - bits.length, () => bits.unshift(0));
+        }
+        return bits.join('');
+      })
+      .join('')
+      .split('')
+      .map(bit => parseInt(bit));
+
+    var blocks = _(bits)
       .chunk(64)
       .map(block => {
         if(block.length !== 64) {
@@ -234,7 +247,7 @@ export default class DES {
     var decryptedBlocks = [];
 
     _.forEach(encryptedBlocks, block => {
-      block = _.map(block.split(','), code => parseInt(code));
+      block = _.map(block.split(','), bit => parseInt(bit));
       block = this.initialTranspose(block);
 
       var left = _.take(block, block.length / 2);
@@ -242,12 +255,17 @@ export default class DES {
 
       var decrypted = this.feistelRound(left, right, -4, roundKeys);
       decrypted = this.endTranspose(decrypted);
-      _.forEachRight(decrypted, code => code === 0 ? decrypted.pop() : false);
       decryptedBlocks.push(decrypted);
     });
 
     decryptedBlocks = decryptedBlocks
-      .map(block => _.map(block, code => String.fromCharCode(code)).join(''));
+      .map(block => {
+        var chunks = _.chunk(block, 16);
+        var codes = chunks.map(bin => bigInt(bin.join(''), 2).toString(10));
+        var chars = codes.map(code => String.fromCharCode(code));
+        var text = chars.join('');
+        return text;
+      });
 
     var text = _.flatten(decryptedBlocks).join('');
 
